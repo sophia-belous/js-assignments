@@ -99,7 +99,7 @@ function fromJSON(proto, json) {
  *
  *  builder.element('a').attr('href$=".png"').pseudoClass('focus').stringify()  => 'a[href$=".png"]:focus'
  *
- *  builder.combine(
+ *  builder.combine(    
  *      builder.element('div').id('main').class('container').class('draggable'),
  *      '+',
  *      builder.combine(
@@ -116,34 +116,92 @@ function fromJSON(proto, json) {
  *  For more examples see unit tests.
  */
 
+function MySuperBaseElementSelector() {
+    this.line = '';
+    this.prev = -1;
+}
+
+MySuperBaseElementSelector.prototype.setSelector = function(selector, prev, canDuplicate) {
+    this.checkOnErrors(prev, canDuplicate);
+
+    this.prev = prev;
+    this.line += selector;
+    return this;
+}
+
+MySuperBaseElementSelector.prototype.checkOnErrors = function(number, canDuplicate) {
+    if (this.prev > number) {
+        throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+
+    if (this.prev === number && !canDuplicate) {
+        throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+    }
+}
+
+MySuperBaseElementSelector.prototype.element = function(selector) {
+    return this.setSelector(selector, 1);
+}
+
+MySuperBaseElementSelector.prototype.id = function(selector) {
+    return this.setSelector(`#${selector}`, 2);
+}
+
+MySuperBaseElementSelector.prototype.class = function(selector) {
+    return this.setSelector(`.${selector}`, 3, true);
+}
+
+MySuperBaseElementSelector.prototype.attr = function(selector) {
+    return this.setSelector(`[${selector}]`, 4, true)
+}
+
+MySuperBaseElementSelector.prototype.pseudoClass = function(selector) {
+    return this.setSelector(`:${selector}`, 5, true)
+}
+
+MySuperBaseElementSelector.prototype.pseudoElement = function(selector) {
+    return this.setSelector(`::${selector}`, 6)
+}
+
+MySuperBaseElementSelector.prototype.combine = function(selector1, combinator, selector2) {
+    return this.setSelector(`${selector1.line} ${combinator} ${selector2.line}`);
+}
+
+MySuperBaseElementSelector.prototype.stringify = function() {
+    return this.line;
+}
+
+
+
 const cssSelectorBuilder = {
 
     element: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().element(value);
     },
 
     id: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().id(value);
     },
 
     class: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().class(value);
     },
 
     attr: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().attr(value);
     },
 
     pseudoClass: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().pseudoClass(value);
     },
 
     pseudoElement: function(value) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().pseudoElement(value);
     },
 
     combine: function(selector1, combinator, selector2) {
-        throw new Error('Not implemented');
+        return new MySuperBaseElementSelector().combine(selector1, combinator, selector2);
+
     },
 };
 
